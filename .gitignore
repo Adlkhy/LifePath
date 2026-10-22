@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+docs
 # Local environment values; keep the documented placeholders in Git.
 .env
 .env.*

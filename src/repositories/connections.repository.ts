@@ -1,12 +1,16 @@
 import { supabase } from '../lib/supabase'
 import { unwrap } from '../lib/data-error'
+import { collectPages } from '../lib/pagination'
 import type { ConnectionType } from '../types/database'
 
 export type CreateConnection = { source_goal_id: string; target_goal_id: string; connection_type?: ConnectionType }
 
 export const connectionsRepository = {
-  async list() {
-    return unwrap('List connections', await supabase.from('goal_connections').select('*').order('created_at').order('id'))
+  async list(offset = 0) {
+    return unwrap('List connections', await supabase.from('goal_connections').select('*').order('created_at').order('id').range(offset, offset + 99))
+  },
+  listAll() {
+    return collectPages((offset) => connectionsRepository.list(offset))
   },
   async get(id: string) {
     return unwrap('Get connection', await supabase.from('goal_connections').select('*').eq('id', id).single())

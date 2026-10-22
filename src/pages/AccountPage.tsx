@@ -18,13 +18,12 @@ export function AccountPage() {
   }
 
   return (
-    <main className="mx-auto max-w-lg space-y-4 p-6">
-      <h1 className="text-2xl font-semibold">Lifepath</h1>
+    <section className="max-w-lg space-y-4">
+      <h1 className="text-2xl font-semibold">Your account</h1>
       <p>Signed in as {session?.user.email}.</p>
-      <p className="text-muted-foreground">Your account is ready. Goals and life chapters are coming next.</p>
       {error && <p role="alert" className="text-destructive">{error}</p>}
       <button onClick={signOut} disabled={busy} className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50">{busy ? 'Signing out…' : 'Sign out'}</button>
       <p><Link to="/" className="underline">Back home</Link></p>
-    </main>
+    </section>
   )
 }

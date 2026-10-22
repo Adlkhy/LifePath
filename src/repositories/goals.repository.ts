@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { unwrap } from '../lib/data-error'
+import { collectPages } from '../lib/pagination'
 import type { Database, GoalStatus, GoalType } from '../types/database'
 
 type Insert = Database['public']['Tables']['goals']['Insert']
@@ -7,6 +8,9 @@ export type CreateGoal = Omit<Insert, 'id' | 'user_id' | 'created_at' | 'updated
 export type UpdateGoal = Partial<CreateGoal>
 
 export const goalsRepository = {
+  listAll() {
+    return collectPages((offset) => goalsRepository.list({ offset, limit: 100 }))
+  },
   async list(filters: { chapterId?: string; status?: GoalStatus; type?: GoalType; offset?: number; limit?: number } = {}) {
     let query = supabase.from('goals').select('*').order('created_at', { ascending: false }).order('id')
     if (filters.chapterId) query = query.eq('chapter_id', filters.chapterId)

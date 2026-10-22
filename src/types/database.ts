@@ -1,4 +1,4 @@
-// Schema contract for 20261021000100_backend_foundation.sql.
+// Schema contract for the backend foundation and chapter reordering migrations.
 // Regenerate with the Supabase CLI after applying migrations (see docs/backend.md).
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 export type ChapterStatus = 'planned' | 'active' | 'completed' | 'archived'
@@ -76,7 +76,9 @@ export type Database = {
       progress_events: Table<ProgressEvent, 'event_type'>
     }
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      reorder_chapters: { Args: { ordered_ids: string[] }; Returns: undefined }
+    }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }
   }

@@ -24,12 +24,15 @@ try {
   `)
   const migration = await readFile(new URL('../supabase/migrations/20261021000100_backend_foundation.sql', import.meta.url), 'utf8')
   await db.exec(migration)
+  await db.exec(await readFile(new URL('../supabase/migrations/20261022000100_reorder_chapters.sql', import.meta.url), 'utf8'))
   const backfill = await db.query("select count(*)::int as count from public.profiles where id = '00000000-0000-4000-8000-000000000009'")
   if (backfill.rows[0].count !== 1) throw new Error('Existing user profile backfill failed')
   const sql = await readFile(new URL('../supabase/tests/backend_foundation.sql', import.meta.url), 'utf8')
   const results = await db.exec(sql)
   const assertions = results.flatMap((result) => result.rows).filter((row) => row.ok === true).length
   console.log(`PASS: migration, existing-user backfill, and ${assertions} database assertions.`)
+  const phase3 = await db.exec(await readFile(new URL('../supabase/tests/chapter_reordering.sql', import.meta.url), 'utf8'))
+  console.log(`PASS: ${phase3.flatMap((result) => result.rows).filter((row) => row.ok === true).length} chapter reordering assertions.`)
   console.log('Scope: embedded PostgreSQL with Auth roles/uid stub; no hosted Auth, HTTP API, or multi-connection concurrency verification.')
 } finally {
   await db.close()

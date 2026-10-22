@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
-import { unwrap } from '../lib/data-error'
+import { DataError, unwrap } from '../lib/data-error'
+import { collectPages } from '../lib/pagination'
 import type { Database } from '../types/database'
 
 type Insert = Database['public']['Tables']['chapters']['Insert']
@@ -7,8 +8,15 @@ export type CreateChapter = Omit<Insert, 'id' | 'user_id' | 'created_at' | 'upda
 export type UpdateChapter = Partial<CreateChapter>
 
 export const chaptersRepository = {
-  async list() {
-    return unwrap('List chapters', await supabase.from('chapters').select('*').order('sort_order').order('id'))
+  async list(offset = 0) {
+    return unwrap('List chapters', await supabase.from('chapters').select('*').order('sort_order').order('id').range(offset, offset + 99))
+  },
+  listAll() {
+    return collectPages((offset) => chaptersRepository.list(offset))
+  },
+  async reorder(ids: string[]) {
+    const { error } = await supabase.rpc('reorder_chapters', { ordered_ids: ids })
+    if (error) throw new DataError('Reorder chapters', error)
   },
   async get(id: string) {
     return unwrap('Get chapter', await supabase.from('chapters').select('*').eq('id', id).single())
