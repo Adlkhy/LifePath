@@ -1,0 +1,54 @@
+/* React Flow defaults are scoped to this page and mapped to the existing theme. */
+.life-map {
+  --xy-background-color: var(--background);
+  --xy-background-pattern-dots-color: var(--border);
+  --xy-edge-stroke: var(--muted-foreground);
+  --xy-edge-stroke-selected: var(--primary);
+  --xy-connectionline-stroke: var(--primary);
+  --xy-edge-label-background-color: var(--background);
+  --xy-edge-label-color: var(--foreground);
+  --xy-handle-background-color: var(--primary);
+  --xy-handle-border-color: var(--background);
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-node-background-color: var(--primary);
+  --xy-minimap-node-stroke-color: var(--border);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--muted) 70%, transparent);
+  --xy-attribution-background-color: var(--background);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--accent-foreground);
+  --xy-controls-button-border-color: var(--border);
+}
+.life-map .react-flow__attribution a { color: var(--muted-foreground); }
+.life-map .react-flow__controls-button { width: 44px; height: 44px; }
+.life-map .react-flow__handle { width: 20px; height: 20px; }
+.life-map .react-flow__node:focus-visible { outline: 2px solid var(--ring); outline-offset: 5px; }
+.life-node {
+  box-sizing: border-box;
+  width: 240px;
+  height: 156px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-sm);
+  transition: background-color 250ms, border-color 250ms, opacity 250ms;
+}
+.life-node-vision { border-top: 4px double var(--primary); }
+.life-node-goal { border-top: 4px solid var(--primary); }
+.life-node-milestone { border-top: 4px dashed var(--muted-foreground); }
+.life-node-quest { border-top: 4px dotted var(--muted-foreground); }
+.life-node[data-status="active"] { border-color: var(--primary); background: var(--accent); color: var(--accent-foreground); }
+.life-node[data-status="completed"] { border-color: var(--primary); background: var(--secondary); color: var(--secondary-foreground); }
+.life-node[data-status="paused"], .life-node[data-status="abandoned"] { opacity: .65; }
+.life-node[data-locked="true"] { border-left-style: dashed; border-right-style: dashed; }
+.life-node.is-selected { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .life-node { transition: none; }
+  .life-map .react-flow__edge.animated path { animation: none; }
+}

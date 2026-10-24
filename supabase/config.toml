@@ -10,3 +10,7 @@ minimum_password_length = 8
 
 [auth.email]
 enable_confirmations = true
+
+# The function verifies the Bearer token using Auth getUser; compatible with new signing keys.
+[functions.delete-account]
+verify_jwt = false

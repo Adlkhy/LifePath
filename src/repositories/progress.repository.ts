@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { unwrap } from '../lib/data-error'
 import type { Json } from '../types/database'
+import { collectPages } from '../lib/pagination'
 
 // Reserved status events can only be emitted by database triggers.
 export type CreateProgressEvent = {
@@ -11,6 +12,7 @@ export type CreateProgressEvent = {
 }
 
 export const progressRepository = {
+  listAll() { return collectPages((offset) => progressRepository.list({ offset, limit: 100 })) },
   async list(options: { goalId?: string; chapterId?: string; offset?: number; limit?: number; ascending?: boolean } = {}) {
     let query = supabase.from('progress_events').select('*').order('created_at', { ascending: options.ascending ?? false }).order('id')
     if (options.goalId) query = query.eq('goal_id', options.goalId)

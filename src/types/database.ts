@@ -1,5 +1,5 @@
-// Schema contract for the backend foundation and chapter reordering migrations.
-// Regenerate with the Supabase CLI after applying migrations (see docs/backend.md).
+// Schema contract for the version-controlled Supabase migrations.
+// Keep this schema contract in sync with the applied Supabase migrations.
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 export type ChapterStatus = 'planned' | 'active' | 'completed' | 'archived'
 export type GoalStatus = 'planned' | 'active' | 'completed' | 'paused' | 'abandoned'
@@ -38,8 +38,8 @@ export type Goal = Timestamps & {
   priority: number | null
   target_date: string | null
   completed_at: string | null
-  position_x: number
-  position_y: number
+  position_x: number | null
+  position_y: number | null
 }
 export type GoalConnection = {
   id: string
@@ -58,6 +58,19 @@ export type ProgressEvent = {
   metadata: Json
   created_at: string
 }
+export type Memory = Timestamps & {
+  id: string
+  user_id: string
+  goal_id: string | null
+  chapter_id: string | null
+  event_id: string | null
+  kind: 'memory' | 'reflection'
+  title: string
+  description: string | null
+  memory_date: string
+  source_title: string | null
+  photo_path: string | null
+}
 
 type Table<Row, Required extends keyof Row> = {
   Row: Row
@@ -74,10 +87,13 @@ export type Database = {
       goals: Table<Goal, 'title'>
       goal_connections: Table<GoalConnection, 'source_goal_id' | 'target_goal_id'>
       progress_events: Table<ProgressEvent, 'event_type'>
+      memories: Table<Memory, 'title'>
     }
     Views: { [_ in never]: never }
     Functions: {
       reorder_chapters: { Args: { ordered_ids: string[] }; Returns: undefined }
+      export_lifepath: { Args: Record<string, never>; Returns: Json }
+      import_lifepath: { Args: { payload: Json }; Returns: Json }
     }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }

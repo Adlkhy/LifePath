@@ -9,6 +9,7 @@ import { DeleteRecord } from '../components/shared/DeleteRecord'
 import { Button } from '../components/ui/button'
 import { GoalList } from '../components/goals/GoalList'
 import { GoalConnections } from '../components/goals/GoalConnections'
+import { MemorySection } from '../components/memories/MemorySection'
 
 export function GoalDetailPage() {
   const { id } = useParams()
@@ -36,20 +37,22 @@ export function GoalDetailPage() {
       {!['completed', 'abandoned'].includes(goal.status) && <Button variant="outline" disabled={mutation.busy} onClick={() => void status('abandoned')}>Abandon</Button>}
     </div>
     {mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}
+    {goal.status === 'completed' && <div className="space-y-2"><p className="text-sm text-muted-foreground">Completion is saved. You can add a reflection now or come back later.</p><Button variant="outline" render={<Link to={`/app/memories/new?goal=${goal.id}&kind=reflection`} />}>Write a reflection</Button></div>}
     <dl className="grid gap-4 rounded-lg border bg-card p-4 text-card-foreground sm:grid-cols-2">
-      <div><dt className="text-sm text-muted-foreground">Chapter</dt><dd>{chapter ? <Link className="break-words underline" to={`/app/chapters/${chapter.id}`}>{chapter.title}</Link> : 'No chapter'}</dd></div>
-      <div><dt className="text-sm text-muted-foreground">Parent</dt><dd>{parent ? <Link className="break-words underline" to={`/app/goals/${parent.id}`}>{parent.title}</Link> : 'No parent'}</dd></div>
+      <div><dt className="text-sm text-muted-foreground">Chapter</dt><dd>{chapter ? <Link className="wrap-break-word underline" to={`/app/chapters/${chapter.id}`}>{chapter.title}</Link> : 'No chapter'}</dd></div>
+      <div><dt className="text-sm text-muted-foreground">Parent</dt><dd>{parent ? <Link className="wrap-break-word underline" to={`/app/goals/${parent.id}`}>{parent.title}</Link> : 'No parent'}</dd></div>
       <div><dt className="text-sm text-muted-foreground">Deadline</dt><dd>{goal.target_date ? dateLabel(goal.target_date) : 'No deadline'}</dd></div>
-      <div><dt className="text-sm text-muted-foreground">Category</dt><dd className="break-words">{goal.category || 'Uncategorized'}</dd></div>
+      <div><dt className="text-sm text-muted-foreground">Category</dt><dd className="wrap-break-word">{goal.category || 'Uncategorized'}</dd></div>
       {goal.priority != null && <div><dt className="text-sm text-muted-foreground">Priority</dt><dd>{goal.priority}</dd></div>}
       {goal.completed_at && <div><dt className="text-sm text-muted-foreground">Completed</dt><dd>{new Date(goal.completed_at).toLocaleString()}</dd></div>}
     </dl>
-    {([['Description', goal.description], ['Why this matters', goal.motivation], ['Success criteria', goal.success_criteria]] as const).map(([title, text]) => text && <section key={title} className="space-y-2"><h2 className="text-lg font-semibold">{title}</h2><p className="whitespace-pre-wrap break-words">{text}</p></section>)}
+    {([['Description', goal.description], ['Why this matters', goal.motivation], ['Success criteria', goal.success_criteria]] as const).map(([title, text]) => text && <section key={title} className="space-y-2"><h2 className="text-lg font-semibold">{title}</h2><p className="whitespace-pre-wrap wrap-break-word">{text}</p></section>)}
     <section className="space-y-4" aria-labelledby="steps-heading"><div className="flex flex-wrap items-center justify-between gap-3"><h2 id="steps-heading" className="text-xl font-semibold">Milestones & steps</h2><Button render={<Link to={`/app/goals/new?parent=${goal.id}&type=${goal.type === 'milestone' ? 'quest' : 'milestone'}`} />}>Add a step</Button></div>
       {progress.total > 0 && <div><p>{progress.completed} of {progress.total} direct steps complete ({Math.round(progress.completed / progress.total * 100)}%)</p><progress aria-label="Direct child completion" className="h-2 w-full accent-primary" max={progress.total} value={progress.completed} /></div>}
       <GoalList goals={goals.filter((item) => item.parent_id === goal.id)} empty="Break this goal into milestones or quests. Steps can have their own nested steps." />
     </section>
     <GoalConnections key={`connections:${goal.id}`} goal={goal} />
-    <DeleteRecord key={`delete:${goal.id}`} name="goal" explanation="Its children and journey history will remain; its connections will be removed." busy={mutation.busy} onDelete={() => void remove()} />
+    <MemorySection key={`memories:${goal.id}`} goalId={goal.id} />
+    <DeleteRecord key={`delete:${goal.id}`} name="goal" explanation="Its children and journey history will remain; its connections will be removed." busy={mutation.busy} error={mutation.error} onDelete={() => void remove()} />
   </>
 }
