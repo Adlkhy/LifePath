@@ -1,14 +1,17 @@
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
+import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
 import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { AuthForm } from './components/auth/AuthForm'
 import { FeedbackProvider } from './components/shared/FeedbackProvider'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
-import { Button } from './components/ui/button'
+import { HomePage } from './pages/HomePage'
 
 const AppLayout = lazy(() => import('./components/layout/AppLayout').then((module) => ({ default: module.AppLayout })))
 const FocusPage = lazy(() => import('./pages/FocusPage').then((module) => ({ default: module.FocusPage })))
+const ValuesPage = lazy(() => import('./pages/ValuesPage').then((module) => ({ default: module.ValuesPage })))
+const BucketListPage = lazy(() => import('./pages/BucketListPage').then((module) => ({ default: module.BucketListPage })))
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage').then((module) => ({ default: module.ReviewsPage })))
 const ChaptersPage = lazy(() => import('./pages/ChaptersPage').then((module) => ({ default: module.ChaptersPage })))
 const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage').then((module) => ({ default: module.ChapterEditorPage })))
 const ChapterDetailPage = lazy(() => import('./pages/ChapterDetailPage').then((module) => ({ default: module.ChapterDetailPage })))
@@ -22,34 +25,16 @@ const MemoryEditorPage = lazy(() => import('./pages/MemoryEditorPage').then((mod
 const MemoryDetailPage = lazy(() => import('./pages/MemoryDetailPage').then((module) => ({ default: module.MemoryDetailPage })))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((module) => ({ default: module.EventDetailPage })))
 
-function HomePage() {
-  return (
-    <>
-      <nav className="flex justify-center items-center gap-5 mt-10" aria-label="Account">
-        <Link className="underline" to="/sign-in">Sign in</Link>
-        <Link className="underline" to="/app">My account</Link>
-      </nav>
-      <section className="max-w-2xl mx-auto mt-10 p-6 ">
-        <h1 className="text-2xl font-bold text-center">
-          Welcome to the Life Path Planner
-        </h1>
-        <p className="text-center mt-4">
-          This is a personal development and life planning application that helps you set goals, track your progress, and reflect on your journey.
-        </p>
-        <p className="text-center mt-4">
-          Get started by creating your first chapter or goal.
-        </p>
-        <Button variant="default" className="mt-6 block mx-auto bg-primary text-primary-foreground px-4 py-2 hover:bg-secondary hover:text-secondary-foreground">
-          <Link to="/app">Start your journey</Link>
-        </Button>
-      </section>
-    </>
-  )
+function RouteScrollReset() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
 }
 
 function App() {
   return (
     <BrowserRouter>
+      <RouteScrollReset />
       <AuthProvider>
         <FeedbackProvider>
         <Suspense fallback={<p role="status" className="p-6">Loading page…</p>}>
@@ -61,6 +46,9 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<FocusPage />} />
+              <Route path="values" element={<ValuesPage />} />
+              <Route path="bucket-list" element={<BucketListPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
               <Route path="chapters" element={<ChaptersPage />} />
               <Route path="chapters/new" element={<ChapterEditorPage />} />
               <Route path="chapters/:id" element={<ChapterDetailPage />} />

@@ -72,6 +72,18 @@ export type Memory = Timestamps & {
   photo_path: string | null
 }
 
+export type PersonalValue = Timestamps & {
+  id: string; user_id: string; name: string; description: string; guiding_principle: string | null; sort_order: number
+}
+export type ValueGoal = { user_id: string; value_id: string; goal_id: string }
+export type BucketListItem = { user_id: string; goal_id: string; created_at: string }
+export type DailyPriority = { user_id: string; priority_date: string; slot: number; goal_id: string }
+export type ReviewPeriod = 'weekly' | 'monthly'
+export type GoalReview = Timestamps & {
+  id: string; user_id: string; period_type: ReviewPeriod; period_start: string
+  went_well: string; didnt_go_as_planned: string; next_focus: string
+}
+
 type Table<Row, Required extends keyof Row> = {
   Row: Row
   Insert: Partial<Row> & Pick<Row, Required>
@@ -88,10 +100,19 @@ export type Database = {
       goal_connections: Table<GoalConnection, 'source_goal_id' | 'target_goal_id'>
       progress_events: Table<ProgressEvent, 'event_type'>
       memories: Table<Memory, 'title'>
+      personal_values: Table<PersonalValue, 'name'>
+      value_goals: Table<ValueGoal, 'value_id' | 'goal_id'>
+      bucket_list_items: Table<BucketListItem, 'goal_id'>
+      daily_priorities: Table<DailyPriority, 'priority_date' | 'slot' | 'goal_id'>
+      goal_reviews: Table<GoalReview, 'period_type' | 'period_start'>
     }
     Views: { [_ in never]: never }
     Functions: {
       reorder_chapters: { Args: { ordered_ids: string[] }; Returns: undefined }
+      save_personal_value: { Args: { value_id: string | null; value_name: string; value_description: string; principle: string | null; goal_ids: string[] }; Returns: string }
+      reorder_values: { Args: { ordered_ids: string[] }; Returns: undefined }
+      create_bucket_experience: { Args: { experience_title: string; experience_description: string | null; experience_category: string | null; experience_date: string | null }; Returns: string }
+      set_daily_priorities: { Args: { day: string; goal_ids: string[] }; Returns: undefined }
       export_lifepath: { Args: Record<string, never>; Returns: Json }
       import_lifepath: { Args: { payload: Json }; Returns: Json }
     }

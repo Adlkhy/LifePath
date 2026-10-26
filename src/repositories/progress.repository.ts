@@ -13,10 +13,12 @@ export type CreateProgressEvent = {
 
 export const progressRepository = {
   listAll() { return collectPages((offset) => progressRepository.list({ offset, limit: 100 })) },
-  async list(options: { goalId?: string; chapterId?: string; offset?: number; limit?: number; ascending?: boolean } = {}) {
+  async list(options: { goalId?: string; chapterId?: string; offset?: number; limit?: number; ascending?: boolean; from?: string; until?: string } = {}) {
     let query = supabase.from('progress_events').select('*').order('created_at', { ascending: options.ascending ?? false }).order('id')
     if (options.goalId) query = query.eq('goal_id', options.goalId)
     if (options.chapterId) query = query.eq('chapter_id', options.chapterId)
+    if (options.from) query = query.gte('created_at', options.from)
+    if (options.until) query = query.lt('created_at', options.until)
     const offset = Math.max(0, options.offset ?? 0)
     const limit = Math.min(100, Math.max(1, options.limit ?? 50))
     return unwrap('List progress', await query.range(offset, offset + limit - 1))

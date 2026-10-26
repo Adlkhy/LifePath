@@ -39,15 +39,18 @@
   box-shadow: var(--shadow-sm);
   transition: background-color 250ms, border-color 250ms, opacity 250ms;
 }
-.life-node-vision { border-top: 4px double var(--primary); }
-.life-node-goal { border-top: 4px solid var(--primary); }
-.life-node-milestone { border-top: 4px dashed var(--muted-foreground); }
-.life-node-quest { border-top: 4px dotted var(--muted-foreground); }
+.life-node-vision { background: #e9ccff; color: #000; }
+.life-node-goal { background: #dceeff; color: #000; }
+.life-node-milestone { background: #cccccc; color: #000; }
+.life-node-quest { background: #fff; color: #000; }
 .life-node[data-status="active"] { border-color: var(--primary); background: var(--accent); color: var(--accent-foreground); }
 .life-node[data-status="completed"] { border-color: var(--primary); background: var(--secondary); color: var(--secondary-foreground); }
 .life-node[data-status="paused"], .life-node[data-status="abandoned"] { opacity: .65; }
 .life-node[data-locked="true"] { border-left-style: dashed; border-right-style: dashed; }
 .life-node.is-selected { outline: 2px solid var(--ring); outline-offset: 3px; }
+.life-map .react-flow__controls { box-shadow: none; display: flex; gap: 4px; }
+.life-map .react-flow__controls-button { border: 1px solid var(--border); border-radius: 1600px; }
+.life-map .react-flow__minimap { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .life-node { transition: none; }
   .life-map .react-flow__edge.animated path { animation: none; }

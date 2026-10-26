@@ -1,3 +1,4 @@
+import { MotionCard } from '../components/ui/motion'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { progressRepository } from '../repositories/progress.repository'
@@ -34,7 +35,7 @@ export function JourneyPage() {
     </div>
     <ResourceState loading={resource.loading} error={resource.error} retry={resource.reload} />
     {resource.data && !filtered.length && <EmptyState>No entries here yet. Save a memory or try another filter.</EmptyState>}
-    {groupJourney(visible, period).map(([key, items]) => <section key={key} className="space-y-4"><h2 className="text-lg font-semibold">{period === 'year' ? key : new Date(`${key}-01T12:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2><ol className="ml-2 space-y-4 border-l pl-4">{items.map((entry) => <li key={entry.id} className="space-y-2 rounded-lg border bg-card p-4 text-card-foreground"><p className="text-xs text-muted-foreground">{label(entry.type)} · <time dateTime={entry.date}>{new Date(entry.date).toLocaleDateString()}</time></p><h3 className="wrap-break-word font-medium"><Link className="underline" to={entry.href}>{entry.title}</Link></h3><p className="line-clamp-3 whitespace-pre-wrap wrap-break-word text-sm">{entry.description}</p></li>)}</ol></section>)}
+    {groupJourney(visible, period).map(([key, items]) => <section key={key} className="space-y-4"><h2 className="text-lg font-semibold">{period === 'year' ? key : new Date(`${key}-01T12:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2><ol className="ml-2 space-y-4 border-l pl-4">{items.map((entry) => <MotionCard as="li" key={entry.id} className="space-y-2 rounded-lg border bg-card p-4 text-card-foreground"><p className="text-xs text-muted-foreground">{label(entry.type)} · <time dateTime={entry.date}>{new Date(entry.date).toLocaleDateString()}</time></p><h3 className="wrap-break-word font-medium"><Link className="underline" to={entry.href}>{entry.title}</Link></h3><p className="line-clamp-3 whitespace-pre-wrap wrap-break-word text-sm">{entry.description}</p></MotionCard>)}</ol></section>)}
     {filtered.length > limit && <Button variant="outline" onClick={() => setLimit(limit + 50)}>Show more entries</Button>}
   </>
 }

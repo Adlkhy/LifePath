@@ -17,6 +17,10 @@ The app is built for individual accounts. Each person signs in to a private work
 
 Goal and chapter status changes create progress history in the database. Deleting a goal or chapter detaches its history and memories while retaining their title snapshots; deleting an account removes its personal data.
 
+## Visual design
+
+The home page, authentication screens, and shared workspace components follow `DESIGN.md`: pastel paper surfaces, black outlines, pill controls, colorful stickers, and static blue ribbon artwork. The public pages always use the light palette; the workspace retains its light/dark toggle. Antonio (the reference's suggested display substitute) and Inter are bundled locally. Navigation and poster layouts adapt to mobile screens. Motion adds brief spring feedback to buttons and navigation, card lifts on hover and keyboard focus, sticker tilts, and notification entrances/exits. Dialogs and form fields use short CSS transitions. Reduced-motion preferences disable movement, and disabled buttons do not animate.
+
 ## Tech stack
 
 | Area | Technology |
@@ -88,7 +92,7 @@ supabase/functions/    Optional account deletion function
 
 ## Current limitations
 
-- The home route is a minimal entry page; the main experience begins after sign-in at `/app`.
+- Planning features at `/app` require a signed-in account; the home page introduces chapters, goals, the Life Map, and the Journey.
 - JSON export excludes photo bytes and account credentials.
 - Changes made in another browser session appear after a reload; the app does not subscribe to Supabase Realtime.
 - A production smoke test still needs a configured Supabase project, migrations, Auth redirects, Storage, and a deployed frontend. The optional account deletion function needs its own deployment test.
