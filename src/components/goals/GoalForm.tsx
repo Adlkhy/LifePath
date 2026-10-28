@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { Chapter, Goal, GoalStatus, GoalType } from '../../types/database'
 import type { CreateGoal } from '../../repositories/goals.repository'
-import { goalStatuses, goalTypes, label, validParent } from '../../lib/lifepath'
+import { goalStatuses, goalTypes, label, questDifficulties, validParent } from '../../lib/lifepath'
 import { useMutation } from '../../hooks/use-mutation'
 import { Button } from '../ui/button'
 import { Field, Input, Select, Textarea } from '../ui/form-controls'
@@ -16,10 +16,15 @@ export function GoalForm({ goal, goals, chapters, initialChapterId = '', initial
     chapter_id: goal?.chapter_id ?? initialChapterId, parent_id: goal?.parent_id ?? initialParentId,
     type: goal?.type ?? initialType, status: goal?.status ?? 'planned',
     target_date: goal?.target_date ?? '', priority: goal?.priority?.toString() ?? '',
+    difficulty: goal ? goal.difficulty ?? '' : 'medium',
   })
   const [validation, setValidation] = useState<string | null>(null)
   const mutation = useMutation()
-  function change(name: keyof typeof values, value: string) { setValues((current) => ({ ...current, [name]: value })) }
+  function change(name: keyof typeof values, value: string) {
+    setValues((current) => ({ ...current, [name]: value,
+      ...(name === 'type' && value === 'quest' && current.type !== 'quest' ? { difficulty: current.difficulty || 'medium' } : {}),
+    }))
+  }
   async function submit(event: FormEvent) {
     event.preventDefault()
     setValidation(null)
@@ -30,6 +35,7 @@ export function GoalForm({ goal, goals, chapters, initialChapterId = '', initial
       success_criteria: values.success_criteria.trim() || null, category: values.category.trim() || null,
       chapter_id: values.chapter_id || null, parent_id: values.parent_id || null,
       target_date: values.target_date || null, priority: values.priority ? Number(values.priority) : null,
+      difficulty: values.type === 'quest' ? (questDifficulties.find((item) => item === values.difficulty) ?? null) : null,
     }))
   }
   return <form onSubmit={submit} className="max-w-3xl space-y-6" aria-label={goal ? 'Edit goal' : 'Create goal'}>
@@ -40,6 +46,7 @@ export function GoalForm({ goal, goals, chapters, initialChapterId = '', initial
         <Field id="goal-type" label="Type"><Select id="goal-type" value={values.type} onChange={(event) => change('type', event.target.value as GoalType)}>{goalTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</Select></Field>
         <Field id="goal-status" label="Status"><Select id="goal-status" value={values.status} onChange={(event) => change('status', event.target.value as GoalStatus)}>{goalStatuses.map((status) => <option key={status} value={status}>{label(status)}</option>)}</Select></Field>
       </div>
+      {values.type === 'quest' && <Field id="quest-difficulty" label="Difficulty (optional)"><Select id="quest-difficulty" value={values.difficulty} onChange={(event) => change('difficulty', event.target.value)}><option value="">Not set</option>{questDifficulties.map((difficulty) => <option key={difficulty} value={difficulty}>{label(difficulty)}</option>)}</Select></Field>}
       <Field id="goal-description" label="Description (optional)"><Textarea id="goal-description" value={values.description} onChange={(event) => change('description', event.target.value)} /></Field>
       <Field id="goal-motivation" label="Why this matters (optional)"><Textarea id="goal-motivation" value={values.motivation} onChange={(event) => change('motivation', event.target.value)} /></Field>
       <Field id="goal-success" label="Success criteria (optional)"><Textarea id="goal-success" value={values.success_criteria} onChange={(event) => change('success_criteria', event.target.value)} /></Field>

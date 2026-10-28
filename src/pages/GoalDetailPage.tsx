@@ -10,10 +10,12 @@ import { Button } from '../components/ui/button'
 import { GoalList } from '../components/goals/GoalList'
 import { GoalConnections } from '../components/goals/GoalConnections'
 import { MemorySection } from '../components/memories/MemorySection'
+import { GoalProgression } from '../components/goals/GoalProgression'
+import { GoalProgress } from '../components/goals/GoalProgress'
 
 export function GoalDetailPage() {
   const { id } = useParams()
-  const { goals, chapters, refresh } = useLifeData()
+  const { goals, chapters, refresh, patchGoal } = useLifeData()
   const mutation = useMutation()
   const navigate = useNavigate()
   const goal = goals.find((item) => item.id === id)
@@ -22,7 +24,10 @@ export function GoalDetailPage() {
   const parent = goals.find((item) => item.id === goal.parent_id)
   const progress = childProgress(goal.id, goals)
   async function status(value: GoalStatus) {
-    if (await mutation.run(() => goalsRepository.update(goal!.id, { status: value }))) refresh()
+    await mutation.run(async () => {
+      const saved = await goalsRepository.update(goal!.id, { status: value })
+      patchGoal(saved.id, { status: saved.status, completed_at: saved.completed_at })
+    }, value === 'completed' ? `${label(goal!.type)} completed.` : 'Goal status saved.')
   }
   async function remove() {
     if (await mutation.run(() => goalsRepository.remove(goal!.id))) { refresh(); navigate('/app/goals', { replace: true }) }
@@ -38,6 +43,7 @@ export function GoalDetailPage() {
     </div>
     {mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}
     {goal.status === 'completed' && <div className="space-y-2"><p className="text-sm text-muted-foreground">Completion is saved. You can add a reflection now or come back later.</p><Button variant="outline" render={<Link to={`/app/memories/new?goal=${goal.id}&kind=reflection`} />}>Write a reflection</Button></div>}
+    <GoalProgression key={goal.id} goal={goal} />
     <dl className="grid gap-4 rounded-lg border bg-card p-4 text-card-foreground sm:grid-cols-2">
       <div><dt className="text-sm text-muted-foreground">Chapter</dt><dd>{chapter ? <Link className="wrap-break-word underline" to={`/app/chapters/${chapter.id}`}>{chapter.title}</Link> : 'No chapter'}</dd></div>
       <div><dt className="text-sm text-muted-foreground">Parent</dt><dd>{parent ? <Link className="wrap-break-word underline" to={`/app/goals/${parent.id}`}>{parent.title}</Link> : 'No parent'}</dd></div>
@@ -48,7 +54,7 @@ export function GoalDetailPage() {
     </dl>
     {([['Description', goal.description], ['Why this matters', goal.motivation], ['Success criteria', goal.success_criteria]] as const).map(([title, text]) => text && <section key={title} className="space-y-2"><h2 className="text-lg font-semibold">{title}</h2><p className="whitespace-pre-wrap wrap-break-word">{text}</p></section>)}
     <section className="space-y-4" aria-labelledby="steps-heading"><div className="flex flex-wrap items-center justify-between gap-3"><h2 id="steps-heading" className="text-xl font-semibold">Milestones & steps</h2><Button render={<Link to={`/app/goals/new?parent=${goal.id}&type=${goal.type === 'milestone' ? 'quest' : 'milestone'}`} />}>Add a step</Button></div>
-      {progress.total > 0 && <div><p>{progress.completed} of {progress.total} direct steps complete ({Math.round(progress.completed / progress.total * 100)}%)</p><progress aria-label="Direct child completion" className="h-2 w-full accent-primary" max={progress.total} value={progress.completed} /></div>}
+      {progress.total > 0 && <div><p>{progress.completed} of {progress.total} direct steps complete ({Math.round(progress.completed / progress.total * 100)}%)</p><GoalProgress label="Direct child completion" total={progress.total} completed={progress.completed} /></div>}
       <GoalList goals={goals.filter((item) => item.parent_id === goal.id)} empty="Break this goal into milestones or quests. Steps can have their own nested steps." />
     </section>
     <GoalConnections key={`connections:${goal.id}`} goal={goal} />

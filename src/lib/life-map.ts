@@ -1,16 +1,18 @@
 import dagre from 'dagre'
 import type { Goal, GoalConnection, GoalStatus, GoalType } from '../types/database'
+import { matchesDifficulty, progressionIndex, type DifficultyFilter } from './lifepath'
 
 export const NODE_WIDTH = 240
-export const NODE_HEIGHT = 156
+export const NODE_HEIGHT = 200
 export type MapPosition = { x: number; y: number }
 export type MapPositions = Record<string, MapPosition>
-export type MapFilters = { type: GoalType | ''; status: GoalStatus | ''; chapter: string; search: string }
+export type MapFilters = { type: GoalType | ''; status: GoalStatus | ''; chapter: string; search: string; difficulty: DifficultyFilter }
 
 export function filterMapGoals(goals: Goal[], filters: MapFilters) {
   const search = filters.search.trim().toLocaleLowerCase()
   return goals.filter((goal) => (!filters.type || goal.type === filters.type)
     && (!filters.status || goal.status === filters.status)
+    && matchesDifficulty(goal, filters.difficulty)
     && (!filters.chapter || (filters.chapter === 'none' ? !goal.chapter_id : goal.chapter_id === filters.chapter))
     && (!search || goal.title.toLocaleLowerCase().includes(search)))
 }
@@ -41,13 +43,14 @@ export function layoutGoals(goals: Goal[], connections: GoalConnection[]): MapPo
 }
 
 export function initialPositions(goals: Goal[], connections: GoalConnection[]): MapPositions {
-  const automatic = layoutGoals(goals, connections)
   const positions: MapPositions = {}
   for (const goal of goals) {
     if (goal.position_x !== null && goal.position_y !== null && Number.isFinite(goal.position_x) && Number.isFinite(goal.position_y)) {
       positions[goal.id] = { x: goal.position_x, y: goal.position_y }
     }
   }
+  if (Object.keys(positions).length === goals.length) return positions
+  const automatic = layoutGoals(goals, connections)
   // Newly created goals must not cover manually arranged nodes.
   for (const goal of [...goals].sort((a, b) => a.id.localeCompare(b.id))) {
     if (positions[goal.id]) continue
@@ -60,15 +63,5 @@ export function initialPositions(goals: Goal[], connections: GoalConnection[]): 
 
 /** Small derived index: status changes update parent progress and prerequisite locks in O(V+E). */
 export function mapFeedback(goals: Goal[], connections: GoalConnection[]) {
-  const byId = new Map(goals.map((goal) => [goal.id, goal]))
-  const feedback = new Map(goals.map((goal) => [goal.id, { completed: 0, total: 0, locked: 0 }]))
-  for (const goal of goals) {
-    const parent = goal.parent_id ? feedback.get(goal.parent_id) : undefined
-    if (parent) { parent.total++; if (goal.status === 'completed') parent.completed++ }
-  }
-  for (const edge of connections) {
-    const target = feedback.get(edge.target_goal_id)
-    if (target && edge.connection_type === 'prerequisite' && byId.get(edge.source_goal_id)?.status !== 'completed') target.locked++
-  }
-  return feedback
+  return progressionIndex(goals, connections)
 }

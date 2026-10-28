@@ -4,6 +4,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type ChapterStatus = 'planned' | 'active' | 'completed' | 'archived'
 export type GoalStatus = 'planned' | 'active' | 'completed' | 'paused' | 'abandoned'
 export type GoalType = 'vision' | 'goal' | 'milestone' | 'quest'
+export type QuestDifficulty = 'easy' | 'medium' | 'hard' | 'legendary'
 export type ConnectionType = 'prerequisite' | 'related'
 
 type Timestamps = { created_at: string; updated_at: string }
@@ -36,6 +37,7 @@ export type Goal = Timestamps & {
   category: string | null
   status: GoalStatus
   priority: number | null
+  difficulty: QuestDifficulty | null
   target_date: string | null
   completed_at: string | null
   position_x: number | null

@@ -4,21 +4,20 @@ import type { ConnectionType, Goal } from '../../types/database'
 import { useLifeData } from '../../hooks/use-life-data'
 import { useMutation } from '../../hooks/use-mutation'
 import { connectionsRepository } from '../../repositories/connections.repository'
-import { connectionProblem, unmetPrerequisites } from '../../lib/lifepath'
+import { connectionCandidates, connectionProblem } from '../../lib/lifepath'
 import { Button } from '../ui/button'
 import { Field, Select } from '../ui/form-controls'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 export function GoalConnections({ goal, inPlace = false }: { goal: Goal; inPlace?: boolean }) {
-  const { goals, connections, refresh, putConnection, forgetConnection } = useLifeData()
+  const { goals, connections, putConnection, forgetConnection } = useLifeData()
   const [type, setType] = useState<ConnectionType>('prerequisite')
   const [selected, setSelected] = useState('')
   const [validation, setValidation] = useState<string | null>(null)
   const mutation = useMutation()
   const [removing, setRemoving] = useState<string | null>(null)
   const attached = connections.filter((edge) => edge.source_goal_id === goal.id || edge.target_goal_id === goal.id)
-  const unmet = unmetPrerequisites(goal.id, goals, connections)
-  const candidates = goals.filter((item) => !connectionProblem(item.id, goal.id, type, connections))
+  const candidates = connectionCandidates(goal.id, type, goals, connections)
   async function add(event: FormEvent) {
     event.preventDefault()
     const problem = connectionProblem(selected, goal.id, type, connections)
@@ -26,17 +25,17 @@ export function GoalConnections({ goal, inPlace = false }: { goal: Goal; inPlace
     if (problem) return
     if (await mutation.run(async () => {
       const connection = await connectionsRepository.create({ source_goal_id: selected, target_goal_id: goal.id, connection_type: type })
-      if (inPlace) putConnection(connection)
-    })) { setSelected(''); if (!inPlace) refresh() }
+      putConnection(connection)
+    })) { setSelected('') }
   }
   async function remove(id: string) {
     setValidation(null)
-    if (await mutation.run(() => connectionsRepository.remove(id), 'Connection removed.')) { setRemoving(null); if (inPlace) forgetConnection(id); else refresh() }
+    if (await mutation.run(() => connectionsRepository.remove(id), 'Connection removed.')) { setRemoving(null); forgetConnection(id) }
   }
   return <section className="space-y-4 rounded-lg border p-4" aria-labelledby="connections-heading">
     <h2 id="connections-heading" className="text-xl font-semibold">Connections</h2>
     <ConfirmDialog open={!!removing} onOpenChange={(open) => { if (!open) setRemoving(null) }} title="Remove connection?" description="The goals and their history will remain. Removing a prerequisite can make its dependent goal available." confirmLabel="Remove connection" busy={mutation.busy} onConfirm={() => { if (removing) void remove(removing) }}>{mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}</ConfirmDialog>
-    {unmet.length > 0 ? <div className="space-y-2"><p className="font-medium">Unmet prerequisites</p><ul className="list-inside list-disc">{unmet.map((item) => <li key={item.id}><Link className="wrap-break-word underline" to={`/app/goals/${item.id}`}>{item.title}</Link></li>)}</ul></div> : <p className="text-sm text-muted-foreground">No unmet prerequisites.</p>}
+    <p className="text-sm text-muted-foreground">Prerequisites guide the order of your goals. Related connections link ideas without affecting availability.</p>
     {attached.length > 0 && <ul className="divide-y">{attached.map((edge) => {
       const otherId = edge.source_goal_id === goal.id ? edge.target_goal_id : edge.source_goal_id
       const other = goals.find((item) => item.id === otherId)

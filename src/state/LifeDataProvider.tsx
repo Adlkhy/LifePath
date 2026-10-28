@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { chaptersRepository } from '../repositories/chapters.repository'
 import { goalsRepository } from '../repositories/goals.repository'
 import { connectionsRepository } from '../repositories/connections.repository'
 import { errorMessage } from '../lib/data-error'
 import { LifeDataContext, type LifeData } from './life-data-context'
 import type { Goal, GoalConnection } from '../types/database'
+import { progressionIndex } from '../lib/lifepath'
 
 export function LifeDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<LifeData>({ chapters: [], goals: [], connections: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
+  const progression = useMemo(() => progressionIndex(data.goals, data.connections), [data.goals, data.connections])
   useEffect(() => {
     let active = true
     void Promise.all([chaptersRepository.listAll(), goalsRepository.listAll(), connectionsRepository.listAll()])
@@ -31,5 +33,5 @@ export function LifeDataProvider({ children }: { children: ReactNode }) {
   const forgetConnection = useCallback((id: string) => {
     setData((current) => ({ ...current, connections: current.connections.filter((item) => item.id !== id) }))
   }, [])
-  return <LifeDataContext.Provider value={{ ...data, loading, error, refresh, patchGoal, putConnection, forgetConnection }}>{children}</LifeDataContext.Provider>
+  return <LifeDataContext.Provider value={{ ...data, progression, loading, error, refresh, patchGoal, putConnection, forgetConnection }}>{children}</LifeDataContext.Provider>
 }

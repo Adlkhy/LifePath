@@ -2,6 +2,69 @@ import type { ConnectionType, Goal, GoalConnection, ProgressEvent } from '../typ
 
 export const goalTypes = ['vision', 'goal', 'milestone', 'quest'] as const
 export const goalStatuses = ['planned', 'active', 'completed', 'paused', 'abandoned'] as const
+export const questDifficulties = ['easy', 'medium', 'hard', 'legendary'] as const
+export type DifficultyFilter = '' | 'unset' | typeof questDifficulties[number]
+export function matchesDifficulty(goal: Goal, difficulty: DifficultyFilter) {
+  return !difficulty || (goal.type === 'quest' && (difficulty === 'unset' ? !goal.difficulty : goal.difficulty === difficulty))
+}
+
+export type ProgressionState = 'available' | 'blocked' | 'active' | 'completed' | 'paused' | 'abandoned'
+export function progressionState(status: Goal['status'], unmet: number): ProgressionState {
+  if (status === 'completed' || status === 'abandoned' || status === 'paused') return status
+  if (unmet) return 'blocked'
+  return status === 'active' ? 'active' : 'available'
+}
+type GoalReference = { id: string; title: string; status: Goal['status'] | undefined }
+export type GoalProgression = { completed: number; total: number; locked: number; unmet: GoalReference[]; prerequisites: GoalReference[]; dependents: GoalReference[] }
+
+/** Shared O(V+E) derived data; status and progress remain on the original goals. */
+export function progressionIndex(goals: Goal[], connections: GoalConnection[]) {
+  const byId = new Map(goals.map((goal) => [goal.id, goal]))
+  const result = new Map<string, GoalProgression>(goals.map((goal) => [goal.id, { completed: 0, total: 0, locked: 0, unmet: [], prerequisites: [], dependents: [] }]))
+  for (const goal of goals) {
+    const parent = goal.parent_id ? result.get(goal.parent_id) : undefined
+    if (parent) { parent.total++; if (goal.status === 'completed') parent.completed++ }
+  }
+  for (const edge of connections) {
+    if (edge.connection_type !== 'prerequisite') continue
+    const source = byId.get(edge.source_goal_id)
+    const target = byId.get(edge.target_goal_id)
+    const targetInfo = result.get(edge.target_goal_id)
+    if (targetInfo) {
+      const reference = { id: edge.source_goal_id, title: source?.title ?? 'Unavailable prerequisite', status: source?.status }
+      targetInfo.prerequisites.push(reference)
+      if (source?.status !== 'completed') { targetInfo.unmet.push(reference); targetInfo.locked++ }
+    }
+    if (target) result.get(edge.source_goal_id)?.dependents.push({ id: target.id, title: target.title, status: target.status })
+  }
+  return result
+}
+
+/** Compute all valid inbound candidates once, rather than traversing per option. */
+export function connectionCandidates(target: string, type: ConnectionType, goals: Goal[], connections: GoalConnection[]) {
+  const excluded = new Set([target])
+  const outgoing = new Map<string, string[]>()
+  for (const edge of connections) {
+    if (edge.connection_type !== type) continue
+    if (edge.target_goal_id === target) excluded.add(edge.source_goal_id)
+    if (type === 'related' && edge.source_goal_id === target) excluded.add(edge.target_goal_id)
+    if (type === 'prerequisite') {
+      const targets = outgoing.get(edge.source_goal_id) ?? []
+      targets.push(edge.target_goal_id); outgoing.set(edge.source_goal_id, targets)
+    }
+  }
+  if (type === 'prerequisite') {
+    const visited = new Set<string>()
+    const queue = [target]
+    while (queue.length) {
+      const id = queue.pop()!
+      if (visited.has(id)) continue
+      visited.add(id); excluded.add(id)
+      queue.push(...(outgoing.get(id) ?? []))
+    }
+  }
+  return goals.filter((goal) => !excluded.has(goal.id))
+}
 export const chapterStatuses = ['planned', 'active', 'completed', 'archived'] as const
 export const label = (value: string) => value.replaceAll('_', ' ').replace(/^./, (char) => char.toUpperCase())
 
@@ -39,6 +102,11 @@ export function connectionProblem(source: string, target: string, type: Connecti
     (type === 'related' && edge.source_goal_id === target && edge.target_goal_id === source)
   ))) return 'These goals already have this connection.'
   if (type === 'prerequisite') {
+    const outgoing = new Map<string, string[]>()
+    for (const edge of connections) if (edge.connection_type === 'prerequisite') {
+      const targets = outgoing.get(edge.source_goal_id) ?? []
+      targets.push(edge.target_goal_id); outgoing.set(edge.source_goal_id, targets)
+    }
     const visited = new Set<string>()
     const queue = [target]
     while (queue.length) {
@@ -46,8 +114,7 @@ export function connectionProblem(source: string, target: string, type: Connecti
       if (id === source) return 'This prerequisite would create a circular dependency.'
       if (visited.has(id)) continue
       visited.add(id)
-      connections.filter((edge) => edge.connection_type === 'prerequisite' && edge.source_goal_id === id)
-        .forEach((edge) => queue.push(edge.target_goal_id))
+      queue.push(...(outgoing.get(id) ?? []))
     }
   }
   return null

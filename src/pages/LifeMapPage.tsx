@@ -5,10 +5,10 @@ import { useLifeData } from '../hooks/use-life-data'
 import { useMapPositions } from '../hooks/use-map-positions'
 import { useMutation } from '../hooks/use-mutation'
 import { connectionsRepository } from '../repositories/connections.repository'
-import { connectionProblem, goalStatuses, goalTypes, label } from '../lib/lifepath'
-import { filterMapGoals, layoutGoals, mapFeedback, NODE_HEIGHT, NODE_WIDTH, type MapFilters, type MapPositions } from '../lib/life-map'
+import { connectionProblem, goalStatuses, goalTypes, label, progressionState, questDifficulties } from '../lib/lifepath'
+import { filterMapGoals, layoutGoals, NODE_HEIGHT, NODE_WIDTH, type MapFilters, type MapPositions } from '../lib/life-map'
 import type { ConnectionType } from '../types/database'
-import { LifeNode, type LifeFlowNode } from '../components/map/LifeNode'
+import { LifeNode, type LifeFlowNode, type LifeNodeData } from '../components/map/LifeNode'
 import { MapGoalPanel } from '../components/map/MapGoalPanel'
 import { PageHeading } from '../components/shared/PageHeading'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
@@ -19,7 +19,7 @@ import '@xyflow/react/dist/style.css'
 import '../components/map/life-map.css'
 
 const nodeTypes = { life: LifeNode }
-const clearFilters: MapFilters = { type: '', status: '', chapter: '', search: '' }
+const clearFilters: MapFilters = { type: '', status: '', chapter: '', search: '', difficulty: '' }
 const fitOptions = { padding: 0.2, maxZoom: 1 }
 const ariaLabels = {
   'node.a11yDescription.default': 'Press Enter or Space to select a goal and view details. Use arrow keys to move the selected goal. Press Escape to deselect.',
@@ -28,7 +28,7 @@ const ariaLabels = {
 }
 
 export function LifeMapPage() {
-  const { goals, chapters, connections, putConnection, forgetConnection } = useLifeData()
+  const { goals, chapters, connections, progression: feedback, putConnection, forgetConnection } = useLifeData()
   const placement = useMapPositions()
   const { setPositions, save } = placement
   const mutation = useMutation()
@@ -44,15 +44,26 @@ export function LifeMapPage() {
   const [removingConnection, setRemovingConnection] = useState<string | null>(null)
   const visibleGoals = useMemo(() => filterMapGoals(goals, filters), [goals, filters])
   const visibleIds = useMemo(() => new Set(visibleGoals.map((goal) => goal.id)), [visibleGoals])
-  const feedback = useMemo(() => mapFeedback(goals, connections), [goals, connections])
-  const nodeData = useMemo(() => new Map(goals.map((goal) => [goal.id, {
-    title: goal.title, goalType: goal.type, status: goal.status, ...feedback.get(goal.id)!,
-  }])), [goals, feedback])
+  const activeSelection = visibleIds.has(selectedId) ? selectedId : ''
+  const neighbors = useMemo(() => {
+    const result = new Map<string, LifeNodeData['neighbor']>()
+    const selected = feedback.get(activeSelection)
+    for (const item of selected?.prerequisites ?? []) result.set(item.id, 'prerequisite')
+    for (const item of selected?.dependents ?? []) result.set(item.id, 'dependent')
+    return result
+  }, [feedback, activeSelection])
+  const nodeData = useMemo(() => new Map<string, LifeNodeData>(goals.map((goal) => {
+    const info = feedback.get(goal.id)!
+    return [goal.id, {
+      title: goal.title, goalType: goal.type, status: goal.status, difficulty: goal.difficulty ?? null,
+      completed: info.completed, total: info.total, locked: info.locked, unmetTitles: info.unmet.map((item) => item.title).join(', '), neighbor: neighbors.get(goal.id) ?? '',
+    }]
+  })), [goals, feedback, neighbors])
   const nodes = useMemo<LifeFlowNode[]>(() => goals.map((goal) => ({
     id: goal.id, type: 'life', position: placement.positions[goal.id],
     width: NODE_WIDTH, height: NODE_HEIGHT, data: nodeData.get(goal.id)!,
     hidden: !visibleIds.has(goal.id), selected: goal.id === selectedId,
-    ariaLabel: `${label(goal.type)}: ${goal.title}, ${label(goal.status)}${feedback.get(goal.id)!.locked ? ', unmet prerequisites' : ''}. Press Enter to view details.`,
+    ariaLabel: `${label(goal.type)}: ${goal.title}, ${label(progressionState(goal.status, feedback.get(goal.id)!.locked))}${goal.difficulty ? `, ${label(goal.difficulty)} difficulty` : ''}${feedback.get(goal.id)!.locked ? `, needs ${nodeData.get(goal.id)!.unmetTitles}` : ''}. Press Enter to view details.`,
   })), [goals, placement.positions, nodeData, visibleIds, selectedId, feedback])
   const edges = useMemo<Edge[]>(() => {
     const byId = new Map(goals.map((goal) => [goal.id, goal]))
@@ -68,18 +79,20 @@ export function LifeMapPage() {
       const prerequisite = edge.connection_type === 'prerequisite'
       const source = byId.get(edge.source_goal_id)!
       const target = byId.get(edge.target_goal_id)!
+      const neighbor = prerequisite && (source.id === activeSelection || target.id === activeSelection)
+      const met = source.status === 'completed'
       return {
         id: edge.id, source: source.id, target: target.id, type: 'smoothstep', sourceHandle: 'out', targetHandle: 'in',
         hidden: !visibleIds.has(source.id) || !visibleIds.has(target.id), selected: edge.id === selectedEdgeId,
-        label: prerequisite ? 'Prerequisite' : 'Related',
+        label: prerequisite ? (met ? 'Prerequisite met' : 'Prerequisite') : 'Related',
         ariaLabel: prerequisite ? `${source.title} is required for ${target.title}` : `${source.title} is related to ${target.title}`,
-        animated: prerequisite && source.status === 'completed' && target.status === 'active' && !feedback.get(target.id)!.locked,
+        animated: false,
         markerEnd: { type: prerequisite ? MarkerType.ArrowClosed : MarkerType.Arrow, color: prerequisite ? 'var(--primary)' : 'var(--muted-foreground)' },
         markerStart: prerequisite ? undefined : { type: MarkerType.Arrow, color: 'var(--muted-foreground)' },
-        style: { stroke: prerequisite ? 'var(--primary)' : 'var(--muted-foreground)', strokeWidth: 2, strokeDasharray: prerequisite ? '8 4' : '2 6' },
+        style: { stroke: prerequisite ? 'var(--primary)' : 'var(--muted-foreground)', strokeWidth: neighbor ? 3.5 : prerequisite ? 2 : 1.5, strokeDasharray: prerequisite ? '8 4' : '2 6', opacity: activeSelection && !neighbor ? 0.35 : 1 },
       }
     })]
-  }, [goals, connections, visibleIds, selectedEdgeId, feedback])
+  }, [goals, connections, visibleIds, selectedEdgeId, activeSelection])
 
   const onNodesChange = useCallback((changes: NodeChange<LifeFlowNode>[]) => {
     const moved: MapPositions = {}
@@ -128,11 +141,12 @@ export function LifeMapPage() {
     <PageHeading title="Life Map" description="Explore the steps that connect your life goals."><Button variant="outline" render={<Link to="/app/goals/new" />}>Add a goal</Button></PageHeading>
     <ConfirmDialog open={!!removingConnection} onOpenChange={(open) => { if (!open) setRemovingConnection(null) }} title="Remove connection?" description="The goals and their history will remain. Removing a prerequisite can make its dependent goal available." confirmLabel="Remove connection" busy={mutation.busy} onConfirm={() => { if (removingConnection) void removeConnection(removingConnection) }}>{mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}</ConfirmDialog>
     {!goals.length ? <div className="space-y-3 rounded-lg border p-6"><h2 className="font-semibold">Your map starts with a goal</h2><p className="text-muted-foreground">Add a vision, goal, milestone, or quest. Your existing relationships will appear here.</p></div> : <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Map filters">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Map filters">
         <Field id="map-search" label="Search goals"><Input id="map-search" type="search" value={filters.search} placeholder="Search by title" onChange={(event) => setFilters({ ...filters, search: event.target.value })} /></Field>
         <Field id="map-chapter" label="Life chapter"><Select id="map-chapter" value={filters.chapter} onChange={(event) => setFilters({ ...filters, chapter: event.target.value })}><option value="">All Life</option><option value="none">No chapter</option>{chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}</Select></Field>
         <Field id="map-type" label="Type"><Select id="map-type" value={filters.type} onChange={(event) => setFilters({ ...filters, type: event.target.value as MapFilters['type'] })}><option value="">All types</option>{goalTypes.map((type) => <option key={type} value={type}>{label(type)}</option>)}</Select></Field>
         <Field id="map-status" label="Status"><Select id="map-status" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value as MapFilters['status'] })}><option value="">All statuses</option>{goalStatuses.map((status) => <option key={status} value={status}>{label(status)}</option>)}</Select></Field>
+        <Field id="map-difficulty" label="Quest difficulty"><Select id="map-difficulty" value={filters.difficulty} onChange={(event) => setFilters({ ...filters, difficulty: event.target.value as MapFilters['difficulty'] })}><option value="">All difficulties</option><option value="unset">Not set</option>{questDifficulties.map((difficulty) => <option key={difficulty} value={difficulty}>{label(difficulty)}</option>)}</Select></Field>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" aria-pressed={list} onClick={() => setList(!list)}>{list ? 'Show map' : 'Show accessible list'}</Button>
@@ -152,7 +166,7 @@ export function LifeMapPage() {
       <div className={`grid items-start gap-4 ${!list ? 'lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]' : ''}`}>
       <div className="min-w-0">
       {list ? <GoalList goals={visibleGoals} /> : <>
-        <p id="map-help" className="text-sm text-muted-foreground">Drag the canvas to pan; pinch or use +/− to zoom. Drag a top handle to a bottom handle to connect: the source is required by the target. Select a goal for details or keyboard-friendly connection controls. Auto-layout arranges and saves all goals.</p>
+        <p id="map-help" className="text-sm text-muted-foreground">Drag the canvas to pan; pinch or use +/− to zoom. Drag a top handle to a bottom handle to connect. Prerequisites point from the required goal to its dependent; related links do not affect availability. Select a goal to highlight its direct prerequisites and dependents. Auto-layout arranges and saves all goals.</p>
         <div className="life-map h-[65dvh] min-h-105 overflow-hidden rounded-lg border" aria-label="Interactive life map" aria-describedby="map-help">
           <ReactFlow<LifeFlowNode> nodes={nodes} edges={edges} nodeTypes={nodeTypes} onInit={setFlow} onNodesChange={onNodesChange}
             onNodeClick={(_event, node) => { setSelectedId(node.id); setSelectedEdgeId('') }}
@@ -165,17 +179,17 @@ export function LifeMapPage() {
             isValidConnection={(connection) => !connectionProblem(connection.source, connection.target, connectionType, connections)}
             nodesConnectable={!mutation.busy} deleteKeyCode={null} edgesReconnectable={false} ariaLabelConfig={ariaLabels}
             nodeExtent={[[-10000000, -10000000], [10000000, 10000000]]} minZoom={0.15} maxZoom={2}
-            fitView fitViewOptions={fitOptions} multiSelectionKeyCode={null} selectionOnDrag={false}>
+            fitView fitViewOptions={fitOptions} multiSelectionKeyCode={null} selectionOnDrag={false} onlyRenderVisibleElements>
             <Background gap={24} />
             <Controls showInteractive={false} fitViewOptions={fitOptions} />
             {minimap && <MiniMap pannable zoomable ariaLabel="Life map overview" style={{ width: 140, height: 90 }} />}
           </ReactFlow>
         </div>
-        <p className="flex flex-wrap gap-4 text-xs text-muted-foreground" aria-label="Connection legend"><span>Solid arrow: child → parent</span><span>Dashed arrow: prerequisite → dependent</span><span>Dotted, two arrows: related</span></p>
+        <p className="flex flex-wrap gap-4 text-xs text-muted-foreground" aria-label="Connection legend"><span>Solid arrow: child → parent</span><span>Dashed arrow: prerequisite → dependent</span><span>Dotted, two arrows: related</span><span>Dashed outline: prerequisite of selected</span><span>Dotted outline: dependent of selected</span></p>
       </>}
       {selectedEdge && <section className="space-y-3 rounded-lg border p-4" aria-label="Selected connection"><p>{selectedEdge.ariaLabel}</p>{selectedEdge.id.startsWith('parent:') ? <Button variant="outline" render={<Link to={`/app/goals/${selectedEdge.source}/edit`} />}>Edit parent relationship</Button> : <Button variant="outline" disabled={mutation.busy} onClick={() => setRemovingConnection(selectedEdge.id)}>Remove connection</Button>}<Button variant="outline" className="ml-2" onClick={() => setSelectedEdgeId('')}>Close</Button></section>}
       </div>
-      {selectedGoal ? <aside className="min-w-0 lg:max-h-[75dvh] lg:overflow-y-auto" aria-label="Selected goal"><MapGoalPanel key={selectedGoal.id} goal={selectedGoal} onClose={() => setSelectedId('')} /></aside> : !list && <aside className="space-y-2 rounded-lg border p-4 text-sm text-muted-foreground"><p className="font-medium text-foreground">Explore a goal</p><p>Select a node or choose a goal above to view its progress, prerequisites, and connections.</p><p>Locked goals remain viewable and can still be completed.</p></aside>}
+      {selectedGoal ? <aside className="min-w-0 lg:max-h-[75dvh] lg:overflow-y-auto" aria-label="Selected goal"><MapGoalPanel key={selectedGoal.id} goal={selectedGoal} onClose={() => setSelectedId('')} /></aside> : !list && <aside className="space-y-2 rounded-lg border p-4 text-sm text-muted-foreground"><p className="font-medium text-foreground">Explore a goal</p><p>Select a node or choose a goal above to view its progress, prerequisites, and connections.</p><p>Blocked goals remain viewable, editable, and can still be completed.</p></aside>}
       </div>
     </>}
   </>
