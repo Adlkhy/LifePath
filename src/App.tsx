@@ -24,6 +24,9 @@ const AccountPage = lazy(() => import('./pages/AccountPage').then((module) => ({
 const MemoryEditorPage = lazy(() => import('./pages/MemoryEditorPage').then((module) => ({ default: module.MemoryEditorPage })))
 const MemoryDetailPage = lazy(() => import('./pages/MemoryDetailPage').then((module) => ({ default: module.MemoryDetailPage })))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((module) => ({ default: module.EventDetailPage })))
+const SkillsPage = lazy(() => import('./pages/SkillsPage').then((module) => ({ default: module.SkillsPage })))
+const CharacterPage = lazy(() => import('./pages/CharacterPage').then((module) => ({ default: module.CharacterPage })))
+const InsightsPage = lazy(() => import('./pages/InsightsPage').then((module) => ({ default: module.InsightsPage })))
 
 function RouteScrollReset() {
   const { pathname } = useLocation()
@@ -64,6 +67,9 @@ function App() {
               <Route path="memories/:id/edit" element={<MemoryEditorPage />} />
               <Route path="map" element={<LifeMapPage />} />
               <Route path="account" element={<AccountPage />} />
+              <Route path="skills" element={<SkillsPage />} />
+              <Route path="character" element={<CharacterPage />} />
+              <Route path="insights" element={<InsightsPage />} />
             </Route>
           </Route>
           <Route path="*" element={<main className="p-6"><h1>Page not found</h1><Link className="underline" to="/">Back home</Link></main>} />

@@ -5,6 +5,13 @@ export type ChapterStatus = 'planned' | 'active' | 'completed' | 'archived'
 export type GoalStatus = 'planned' | 'active' | 'completed' | 'paused' | 'abandoned'
 export type GoalType = 'vision' | 'goal' | 'milestone' | 'quest'
 export type QuestDifficulty = 'easy' | 'medium' | 'hard' | 'legendary'
+export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert'
+export type Skill = Timestamps & {
+  id: string; user_id: string; parent_id: string | null; name: string
+  category: string | null; level: SkillLevel; notes: string | null
+}
+export type SkillGoal = { user_id: string; skill_id: string; goal_id: string }
+export type ActivityDay = { day: string; activity_count: number; goal_count: number; chapter_count: number }
 export type ConnectionType = 'prerequisite' | 'related'
 
 type Timestamps = { created_at: string; updated_at: string }
@@ -107,9 +114,13 @@ export type Database = {
       bucket_list_items: Table<BucketListItem, 'goal_id'>
       daily_priorities: Table<DailyPriority, 'priority_date' | 'slot' | 'goal_id'>
       goal_reviews: Table<GoalReview, 'period_type' | 'period_start'>
+      skills: Table<Skill, 'name'>
+      skill_goals: Table<SkillGoal, 'skill_id' | 'goal_id'>
     }
     Views: { [_ in never]: never }
     Functions: {
+      save_skill: { Args: { skill_id: string | null; skill_name: string; skill_category: string | null; parent_skill_id: string | null; proficiency: SkillLevel; skill_notes: string | null; goal_ids: string[] }; Returns: string }
+      progress_activity: { Args: { from_day: string; until_day: string; timezone_name: string }; Returns: ActivityDay[] }
       reorder_chapters: { Args: { ordered_ids: string[] }; Returns: undefined }
       save_personal_value: { Args: { value_id: string | null; value_name: string; value_description: string; principle: string | null; goal_ids: string[] }; Returns: string }
       reorder_values: { Args: { ordered_ids: string[] }; Returns: undefined }

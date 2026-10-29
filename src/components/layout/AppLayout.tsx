@@ -27,7 +27,7 @@ function AppShell() {
         <MotionNavLink to="/app" className="brand-link"><BrandMark /><span>lifepath</span></MotionNavLink>
         <div className="flex flex-wrap items-center gap-2">
           <nav aria-label="Main navigation" className="flex flex-wrap gap-1">
-            {[['/app', 'Focus'], ['/app/map', 'Life Map'], ['/app/chapters', 'Chapters'], ['/app/goals', 'Goals'], ['/app/values', 'Values'], ['/app/bucket-list', 'Bucket List'], ['/app/reviews', 'Reviews'], ['/app/journey', 'Journey'], ['/app/account', 'Account']].map(([to, title]) =>
+            {[['/app', 'Focus'], ['/app/map', 'Life Map'], ['/app/chapters', 'Chapters'], ['/app/goals', 'Goals'], ['/app/skills', 'Skills'], ['/app/character', 'Character'], ['/app/insights', 'Insights'], ['/app/values', 'Values'], ['/app/bucket-list', 'Bucket List'], ['/app/reviews', 'Reviews'], ['/app/journey', 'Journey'], ['/app/account', 'Account']].map(([to, title]) =>
               <MotionNavLink key={to} to={to} end={to === '/app'} className="nav-pill">{title}</MotionNavLink>)}
           </nav>
           <Button variant="outline" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>

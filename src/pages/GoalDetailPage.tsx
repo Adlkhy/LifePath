@@ -12,6 +12,7 @@ import { GoalConnections } from '../components/goals/GoalConnections'
 import { MemorySection } from '../components/memories/MemorySection'
 import { GoalProgression } from '../components/goals/GoalProgression'
 import { GoalProgress } from '../components/goals/GoalProgress'
+import { GoalSkills } from '../components/goals/GoalSkills'
 
 export function GoalDetailPage() {
   const { id } = useParams()
@@ -58,6 +59,7 @@ export function GoalDetailPage() {
       <GoalList goals={goals.filter((item) => item.parent_id === goal.id)} empty="Break this goal into milestones or quests. Steps can have their own nested steps." />
     </section>
     <GoalConnections key={`connections:${goal.id}`} goal={goal} />
+    <GoalSkills key={`skills:${goal.id}`} goalId={goal.id} />
     <MemorySection key={`memories:${goal.id}`} goalId={goal.id} />
     <DeleteRecord key={`delete:${goal.id}`} name="goal" explanation="Its children and journey history will remain; its connections will be removed." busy={mutation.busy} error={mutation.error} onDelete={() => void remove()} />
   </>

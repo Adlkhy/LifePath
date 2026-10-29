@@ -12,6 +12,9 @@ export type CreateProgressEvent = {
 }
 
 export const progressRepository = {
+  async activity(fromDay: string, untilDay: string, timezone: string) {
+    return unwrap('Load activity', await supabase.rpc('progress_activity', { from_day: fromDay, until_day: untilDay, timezone_name: timezone }))
+  },
   listAll() { return collectPages((offset) => progressRepository.list({ offset, limit: 100 })) },
   async list(options: { goalId?: string; chapterId?: string; offset?: number; limit?: number; ascending?: boolean; from?: string; until?: string } = {}) {
     let query = supabase.from('progress_events').select('*').order('created_at', { ascending: options.ascending ?? false }).order('id')
