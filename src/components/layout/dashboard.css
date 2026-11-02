@@ -1,0 +1,30 @@
+/* Dashboard-only geometry. The existing theme, typography and tokens stay in index.css. */
+.dashboard-shell .dashboard-content > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-shell .page-heading {
+  gap: 1rem;
+  padding: 1rem 0 1.5rem;
+}
+
+.dashboard-shell .dashboard-content > section.rounded-lg,
+.dashboard-shell .dashboard-content > form.rounded-lg,
+.dashboard-shell .dashboard-content > aside.rounded-lg {
+  background: var(--card);
+  padding: 1.5rem;
+}
+
+.dashboard-shell .dashboard-canvas .life-map {
+  width: 100%;
+  height: max(26rem, calc(100dvh - 12rem));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-shell [data-slot="sidebar-gap"],
+  .dashboard-shell [data-slot="sidebar-container"],
+  .dashboard-shell [data-slot="sidebar-menu-button"] {
+    transition: none;
+  }
+}
