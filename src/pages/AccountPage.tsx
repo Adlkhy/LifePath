@@ -15,9 +15,12 @@ import { DataTransfer } from '../components/settings/DataTransfer'
 import { AccountDeletion } from '../components/settings/AccountDeletion'
 import { Field, Input } from '../components/ui/form-controls'
 import { Button } from '../components/ui/button'
+import { useLocalDay } from '../hooks/use-local-day'
 
 function ProfileForm({ profile }: { profile: Profile }) {
   const [name, setName] = useState(profile.display_name ?? '')
+  const [birthday, setBirthday] = useState(profile.birthday ?? '')
+  const today = useLocalDay()
   const [avatar, setAvatar] = useState(profile.avatar_url ?? '')
   const mutation = useMutation()
   async function save(event: FormEvent) {
@@ -25,10 +28,17 @@ function ProfileForm({ profile }: { profile: Profile }) {
     await mutation.run(async () => {
       const url = avatar.trim()
       if (url && !/^https?:\/\//i.test(url)) throw new Error('Use an HTTP or HTTPS image URL.')
-      await profilesRepository.update(profile.id, { display_name: name.trim() || null, avatar_url: url || null })
+      await profilesRepository.update(profile.id, { display_name: name.trim() || null, birthday: birthday || null, avatar_url: url || null })
     }, 'Profile saved.')
   }
-  return <form onSubmit={save} className="space-y-3 rounded-lg border p-4"><h2 className="text-xl font-semibold">Profile</h2><Field id="display-name" label="Display name"><Input id="display-name" maxLength={100} autoComplete="nickname" value={name} onChange={(e) => setName(e.target.value)} /></Field><Field id="profile-avatar" label="Avatar image URL (optional)"><Input id="profile-avatar" type="url" maxLength={2000} value={avatar} onChange={(e) => setAvatar(e.target.value)} /></Field>{mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}<Button type="submit" disabled={mutation.busy}>{mutation.busy ? 'Saving…' : 'Save profile'}</Button></form>
+  return <form onSubmit={save} className="space-y-3 rounded-lg border p-4">
+    <h2 className="text-xl font-semibold">Profile</h2>
+    <Field id="display-name" label="Display name"><Input id="display-name" maxLength={100} autoComplete="nickname" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+    <Field id="profile-birthday" label="Birthday (optional)"><Input id="profile-birthday" type="date" autoComplete="bday" min="0001-01-01" max={today} value={birthday} onChange={(e) => setBirthday(e.target.value)} /></Field>
+    <Field id="profile-avatar" label="Avatar image URL (optional)"><Input id="profile-avatar" type="url" maxLength={2000} value={avatar} onChange={(e) => setAvatar(e.target.value)} /></Field>
+    {mutation.error && <p role="alert" className="text-destructive">{mutation.error}</p>}
+    <Button type="submit" disabled={mutation.busy}>{mutation.busy ? 'Saving…' : 'Save profile'}</Button>
+  </form>
 }
 export function AccountPage() {
   const { session } = useAuth()

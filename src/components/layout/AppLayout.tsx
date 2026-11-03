@@ -47,7 +47,7 @@ function AppShell() {
         <div id="main-content" tabIndex={-1} ref={content} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--app-canvas)] outline-none">
           <div className={`dashboard-content mx-auto w-full min-w-0 space-y-6 p-4 pb-12 sm:p-6 sm:pb-12 lg:px-8 ${canvas ? 'dashboard-canvas' : 'max-w-[1440px]'}`}>
             <Suspense fallback={<p role="status" className="py-6">Loading page…</p>}>
-              {pathname === '/app/account' ? <Outlet /> : loading ? <p role="status" className="py-6">Loading your Lifepath…</p> : error ? <div className="space-y-4 rounded-lg border p-6"><p role="alert" className="text-destructive">{error}</p><Button onClick={refresh}>Try again</Button></div> : <Outlet />}
+              {pathname === '/app/account' || pathname === '/app/life-calendar' ? <Outlet /> : loading ? <p role="status" className="py-6">Loading your Lifepath…</p> : error ? <div className="space-y-4 rounded-lg border p-6"><p role="alert" className="text-destructive">{error}</p><Button onClick={refresh}>Try again</Button></div> : <Outlet />}
             </Suspense>
           </div>
         </div>

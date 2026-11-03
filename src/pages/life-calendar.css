@@ -1,0 +1,27 @@
+.life-calendar {
+  --calendar-chapter: #006ee6;
+  --calendar-memory: #c9430b;
+}
+
+.dark .life-calendar {
+  --calendar-chapter: #50a7ff;
+  --calendar-memory: #ff9852;
+}
+
+.life-calendar-viewport {
+  position: relative;
+  width: 100%;
+  height: clamp(22rem, 75dvh, 62rem);
+  overflow: hidden;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.life-calendar-viewport:active { cursor: grabbing; }
+.life-calendar-viewport canvas { display: block; width: 100%; height: 100%; }
+.life-calendar-chapter { color: var(--calendar-chapter); }
+.life-calendar-memory { color: var(--calendar-memory); }
+
+@media (max-width: 767px) {
+  .life-calendar-viewport { height: clamp(20rem, 55dvh, 28rem); }
+}

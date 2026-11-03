@@ -18,6 +18,7 @@ type Timestamps = { created_at: string; updated_at: string }
 export type Profile = Timestamps & {
   id: string
   display_name: string | null
+  birthday: string | null
   avatar_url: string | null
   preferences: Json
 }

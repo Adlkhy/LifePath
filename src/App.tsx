@@ -21,6 +21,7 @@ const GoalDetailPage = lazy(() => import('./pages/GoalDetailPage').then((module)
 const JourneyPage = lazy(() => import('./pages/JourneyPage').then((module) => ({ default: module.JourneyPage })))
 const LifeMapPage = lazy(() => import('./pages/LifeMapPage').then((module) => ({ default: module.LifeMapPage })))
 const AccountPage = lazy(() => import('./pages/AccountPage').then((module) => ({ default: module.AccountPage })))
+const LifeCalendarPage = lazy(() => import('./pages/LifeCalendarPage').then((module) => ({ default: module.LifeCalendarPage })))
 const MemoryEditorPage = lazy(() => import('./pages/MemoryEditorPage').then((module) => ({ default: module.MemoryEditorPage })))
 const MemoryDetailPage = lazy(() => import('./pages/MemoryDetailPage').then((module) => ({ default: module.MemoryDetailPage })))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((module) => ({ default: module.EventDetailPage })))
@@ -67,6 +68,7 @@ function App() {
               <Route path="memories/:id/edit" element={<MemoryEditorPage />} />
               <Route path="map" element={<LifeMapPage />} />
               <Route path="account" element={<AccountPage />} />
+              <Route path="life-calendar" element={<LifeCalendarPage />} />
               <Route path="skills" element={<SkillsPage />} />
               <Route path="character" element={<CharacterPage />} />
               <Route path="insights" element={<InsightsPage />} />

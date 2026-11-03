@@ -1,4 +1,4 @@
-import { BookOpen, ChartNoAxesCombined, Compass, Focus, History, ListChecks, Map, Network, Target, UserRound } from 'lucide-react'
+import { BookOpen, CalendarDays, ChartNoAxesCombined, Compass, Focus, History, ListChecks, Map, Network, Target, UserRound } from 'lucide-react'
 
 export const navigation = [
   { label: 'Main', items: [
@@ -16,6 +16,7 @@ export const navigation = [
   ] },
   { label: 'Journey', items: [
     { to: '/app/journey', title: 'Your journey', icon: History },
+    { to: '/app/life-calendar', title: 'Life Calendar', icon: CalendarDays },
   ] },
   { label: 'Insights', items: [
     { to: '/app/insights', title: 'Insights', icon: ChartNoAxesCombined },
